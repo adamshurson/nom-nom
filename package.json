@@ -1,0 +1,21 @@
+{
+  "name": "nom-nom",
+  "version": "1.0.0",
+  "description": "Node Object Management",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha ./test/tests --timeout 10000 --exit"
+  },
+  "author": "Adam Shurson",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "mocha": "^5.2.0",
+    "mongoose": "^5.3.6"
+  },
+  "devDependencies": {
+    "body-parser": "^1.18.3",
+    "chai": "^4.2.0",
+    "chai-http": "^4.2.0"
+  }
+}
