@@ -102,28 +102,58 @@ const nom = {
     },
     route: function(app) {
         nom.models.map(model => {
-            router.route('/' + model.name)
-            .get((req, res) => nom.get(model.mongoose, res, req.headers.filter, req.headers.populate))
-            .delete((req, res) => nom.delete(model.mongoose, res, req.headers.filter))
-            .post((req, res) => nom.post(model.mongoose, res, req.body, req.headers.populate))
-            .put((req, res) => nom.put(model.mongoose, res, req.body, req.headers.populate))
-            .options((req, res) => nom.options(model.mongoose, res));
+            if (model.exceptions !== undefined) {
+                model.exceptions.map(exception => {
+                    switch(exception) {
+                        case "get":
+                        router.route('/' + model.name)
+                        .get((req, res) => nom.get(model.mongoose, res, req.headers.filter, req.headers.populate));
+                        break;
+                        case "delete":
+                        router.route('/' + model.name)
+                        .delete((req, res) => nom.delete(model.mongoose, res, req.headers.filter))
+                        break;
+                        case "post":
+                        router.route('/' + model.name)
+                        .post((req, res) => nom.post(model.mongoose, res, req.body, req.headers.populate));
+                        break;
+                        case "put":
+                        router.route('/' + model.name)
+                        .put((req, res) => nom.put(model.mongoose, res, req.body, req.headers.populate));
+                        break;
+                        case "options":
+                        router.route('/' + model.name)
+                        .options((req, res) => nom.options(model.mongoose, res));
+                        break;
+                    }
+                });
+            } else {
+                router.route('/' + model.name)
+                .get((req, res) => nom.get(model.mongoose, res, req.headers.filter, req.headers.populate))
+                .delete((req, res) => nom.delete(model.mongoose, res, req.headers.filter))
+                .post((req, res) => nom.post(model.mongoose, res, req.body, req.headers.populate))
+                .put((req, res) => nom.put(model.mongoose, res, req.body, req.headers.populate))
+                .options((req, res) => nom.options(model.mongoose, res));
+            }
         });
     },
-    model: function(modelPath, file) {
+    model: function(modelPath, file, exceptions) {
         const mod = require(modelPath);
+        const name = file.substring(0, file.indexOf('.js'));
         const model = {
-            name: file.substring(0, file.indexOf('.js')),
-            mongoose: mod
+            name: name,
+            mongoose: mod,
+            exceptions: exceptions[name]
         };
         nom.models.push(model);
     },
-    nom: function(modelFolder, rootUrl) {
+    nom: function(modelFolder, exceptions) {
+        exceptions = exceptions || {};
         if (modelFolder === undefined) {
             err("model folder undefined");
         }
         fs.readdirSync(modelFolder).forEach(function(file) {
-            nom.model(modelFolder + "/" + file, file);
+            nom.model(modelFolder + "/" + file, file, exceptions);
         });
         nom.route();
         return router;
