@@ -1,5 +1,5 @@
 {
-  "name": "nom-nom",
+  "name": "@ashurson/nom-nom",
   "version": "1.0.0",
   "description": "Node Object Management",
   "main": "index.js",

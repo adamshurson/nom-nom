@@ -16,6 +16,6 @@ mongoose.connect('mongodb://localhost:27017/test', {
 });
 
 const nomRouter = nom.nom(path.join(__dirname, './models'));
-app.use('/nom', nomRouter);
+app.use('/', nomRouter);
 
 module.exports = app;

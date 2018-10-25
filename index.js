@@ -11,11 +11,30 @@ const nom = {
         payload = payload || null;
         return res.json({success: true, payload: payload});
     },
+    query: function(model, object, populate) {
+        if (populate) {
+            const fields = nom.getPopulatedFields(model);
+            return model.find(object).populate(fields.join(' ')).exec();
+        } else {
+            return model.find(object);
+        }
+    },
+    getPopulatedFields: function(model) {
+        const populatedFields = [];
+        Object.keys(model.schema.obj).map(key => {
+            if (model.schema.obj[key] instanceof Object) {
+                if (model.schema.obj[key].ref !== undefined) {
+                    populatedFields.push(key);
+                }
+            }
+        });
+        return populatedFields;
+    },
     options: function(model, res) {
         const keys = Object.keys(model.schema.obj);
         nom.success(res, keys);
     },
-    put: function(model, res, obj) {
+    put: function(model, res, obj, populate) {
         model.findById(obj._id)
         .then(m => {
             Object.keys(model.schema.obj).map(key => {
@@ -27,7 +46,13 @@ const nom = {
                 if (err) {
                     nom.error(res, err);
                 } else {
-                    nom.success(res, m);
+                    nom.query(model, m, populate)
+                    .then((result) => {
+                        nom.success(res, result[0]);
+                    })
+                    .catch((err) => {
+                        nom.error(res, err);
+                    });
                 }
             });
         })
@@ -43,7 +68,7 @@ const nom = {
             nom.error(res, err);
         });
     },
-    post: function(model, res, body) {
+    post: function(model, res, body, populate) {
         const object = {};
         Object.keys(model.schema.obj).map(key => {
             if (body.hasOwnProperty(key)) {
@@ -55,27 +80,33 @@ const nom = {
             if (err) {
                 nom.error(res, err);
             } else {
-                nom.success(res, newModel);
+                nom.query(model, newModel, populate)
+                .then((result) => {
+                    nom.success(res, result[0]);
+                })
+                .catch((err) => {
+                    nom.error(res, err);
+                });
             }
         });
     },
-    get: function(model, res, filter) {
+    get: function(model, res, filter, populate) {
         filter = filter || {};
-        model.find(filter)
-        .then(models => {
-            nom.success(res, models);
+        nom.query(model, filter, populate)
+        .then((results) => {
+            nom.success(res, results);
         })
-        .catch(err => {
+        .catch((err) => {
             nom.error(res, err);
         });
     },
     route: function(app) {
         nom.models.map(model => {
             router.route('/' + model.name)
-            .get((req, res) => nom.get(model.mongoose, res, req.filter))
-            .delete((req, res) => nom.delete(model.mongoose, res, req.filter))
-            .post((req, res) => nom.post(model.mongoose, res, req.body))
-            .put((req, res) => nom.put(model.mongoose, res, req.body))
+            .get((req, res) => nom.get(model.mongoose, res, req.headers.filter, req.headers.populate))
+            .delete((req, res) => nom.delete(model.mongoose, res, req.headers.filter))
+            .post((req, res) => nom.post(model.mongoose, res, req.body, req.headers.populate))
+            .put((req, res) => nom.put(model.mongoose, res, req.body, req.headers.populate))
             .options((req, res) => nom.options(model.mongoose, res));
         });
     },
