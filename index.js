@@ -12,6 +12,9 @@ const nom = {
         return res.json({success: true, payload: payload});
     },
     query: function(model, object, populate) {
+        if (typeof object === "string") {
+            object = JSON.parse(object);
+        }
         if (populate) {
             const fields = nom.getPopulatedFields(model);
             return model.find(object).populate(fields.join(' ')).exec();
@@ -46,7 +49,7 @@ const nom = {
                 if (err) {
                     nom.error(res, err);
                 } else {
-                    nom.query(model, m, populate)
+                    nom.query(model, {_id: m._id}, populate)
                     .then((result) => {
                         nom.success(res, result[0]);
                     })
@@ -80,7 +83,7 @@ const nom = {
             if (err) {
                 nom.error(res, err);
             } else {
-                nom.query(model, newModel, populate)
+                nom.query(model, {_id: newModel._id}, populate)
                 .then((result) => {
                     nom.success(res, result[0]);
                 })
